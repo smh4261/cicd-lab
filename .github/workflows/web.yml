@@ -29,6 +29,22 @@ jobs:
           docker run --rm --add-host api:127.0.0.1 \
             -v "$PWD/web/default.conf:/etc/nginx/conf.d/default.conf:ro" \
             nginx:1.29-alpine nginx -t
+  deploy-dev:
+    needs: push
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: dev 매니페스트에 태그 기록
+        run: |
+          cd deploy/overlays/dev
+          kustomize edit set image todo-web=ghcr.io/${GITHUB_REPOSITORY,,}/web:${GITHUB_SHA}   # ④ 이미지 이름?
+          cd -
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "deploy(dev): web ${GITHUB_SHA::7}"
+          git push            
 
   scan:
     needs: test
